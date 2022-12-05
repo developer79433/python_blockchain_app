@@ -156,11 +156,7 @@ def register_with_existing_node():
 @app.route('/add_block', methods=['POST'])
 def verify_and_add_block():
     block_data = request.get_json()
-    block = Block(block_data["index"],
-                  block_data["transactions"],
-                  block_data["timestamp"],
-                  block_data["previous_hash"],
-                  block_data["nonce"])
+    block = block.from_json(block_data)
 
     proof = block_data['hash']
     try:

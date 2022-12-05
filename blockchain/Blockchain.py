@@ -20,11 +20,7 @@ class Blockchain:
         for idx, block_data in enumerate(json_data):
             if idx == 0:
                 continue  # skip genesis block
-            block = Block(block_data["index"],
-                        block_data["transactions"],
-                        block_data["timestamp"],
-                        block_data["previous_hash"],
-                        block_data["nonce"])
+            block = Block.from_json(block_data)
             proof = block_data['hash']
             generated_blockchain.add_block(block, proof)
         return generated_blockchain

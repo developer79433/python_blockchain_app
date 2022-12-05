@@ -16,3 +16,12 @@ class Block:
         """
         block_string = json.dumps(self.__dict__, sort_keys=True)
         return sha256(block_string.encode()).hexdigest()
+
+    @classmethod
+    def from_json(cls, block_data):
+        return Block(block_data["index"],
+            block_data["transactions"],
+            block_data["timestamp"],
+            block_data["previous_hash"],
+            block_data["nonce"]
+        )
