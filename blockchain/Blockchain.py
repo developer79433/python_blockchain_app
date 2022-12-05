@@ -14,6 +14,21 @@ class Blockchain:
             self.chain = []
             self.create_genesis_block()
 
+    @classmethod
+    def create_chain_from_dump(cls, chain_dump):
+        generated_blockchain = Blockchain()
+        for idx, block_data in enumerate(chain_dump):
+            if idx == 0:
+                continue  # skip genesis block
+            block = Block(block_data["index"],
+                        block_data["transactions"],
+                        block_data["timestamp"],
+                        block_data["previous_hash"],
+                        block_data["nonce"])
+            proof = block_data['hash']
+            generated_blockchain.add_block(block, proof)
+        return generated_blockchain
+
     def create_genesis_block(self):
         """
         A function to generate genesis block and appends it to

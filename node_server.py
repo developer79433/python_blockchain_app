@@ -15,28 +15,13 @@ from blockchain import Block, Blockchain, Node
 logging.basicConfig(level=logging.DEBUG)
 
 
-node = Node()
+node = None
 
 
 app = Flask(__name__)
 
 
 chain_file_name = os.environ.get('DATA_FILE')
-
-
-def create_chain_from_dump(chain_dump):
-    generated_blockchain = Blockchain()
-    for idx, block_data in enumerate(chain_dump):
-        if idx == 0:
-            continue  # skip genesis block
-        block = Block(block_data["index"],
-                      block_data["transactions"],
-                      block_data["timestamp"],
-                      block_data["previous_hash"],
-                      block_data["nonce"])
-        proof = block_data['hash']
-        generated_blockchain.add_block(block, proof)
-    return generated_blockchain
 
 
 # endpoint to return the node's copy of the chain.
@@ -78,12 +63,7 @@ else:
         else:
             data = json.loads(raw_data)
 
-if data is None:
-    # the node's copy of blockchain
-    node.blockchain = Blockchain()
-else:
-    node.blockchain = create_chain_from_dump(data['chain'])
-    node.peers.update(data['peers'])
+node = Node(data)
 
 
 # endpoint to submit a new transaction. This will be used by
@@ -162,7 +142,7 @@ def register_with_existing_node():
         global node
         # update chain and the peers
         chain_dump = response.json()['chain']
-        node.blockchain = create_chain_from_dump(chain_dump)
+        node.blockchain = Blockchain.create_chain_from_dump(chain_dump)
         node.peers.update(response.json()['peers'])
         return "Registration successful", 200
     else:
