@@ -9,7 +9,7 @@ import logging
 from flask import Flask, request
 import requests
 
-from blockchain import Block, Blockchain, Node
+from blockchain import Block, Node
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -78,7 +78,7 @@ def new_transaction():
 
     tx_data["timestamp"] = time.time()
 
-    node.blockchain.add_new_transaction(tx_data)
+    node.add_new_transaction(tx_data)
 
     return "Success", 201
 
@@ -89,17 +89,11 @@ def new_transaction():
 @app.route('/mine', methods=['GET'])
 def mine_unconfirmed_transactions():
     global node
-    result = node.blockchain.mine()
-    if not result:
+    new_block_idx = node.mine_unconfirmed_transactions()
+    if new_block_idx == 0:
         return "No transactions to mine"
     else:
-        # Making sure we have the longest chain before announcing to the network
-        chain_length = len(node.blockchain.chain)
-        consensus()
-        if chain_length == len(node.blockchain.chain):
-            # announce the recently mined block to the network
-            announce_new_block(node.blockchain.last_block)
-        return "Block #{} is mined.".format(node.blockchain.last_block.index)
+        return "Block #{} is mined.".format(new_block_idx)
 
 
 # endpoint to add new peers to the network.
@@ -111,7 +105,7 @@ def register_new_peers():
         return "Invalid data", 400
 
     # Add the node to the peer list
-    node.peers.add(node_address)
+    node.add_peer(node_address)
 
     # Return the consensus blockchain to the newly registered node
     # so that he can sync
@@ -139,9 +133,7 @@ def register_with_existing_node():
     if response.status_code == 200:
         global node
         # update chain and the peers
-        chain_dump = response.json()['chain']
-        peers = response.json()['peers']
-        node = Node(chain=Blockchain.from_json(chain_dump), peers=peers)
+        node = Node.from_json(response.json())
         return "Registration successful", 200
     else:
         # if something goes wrong, pass it on to the API response
@@ -159,7 +151,7 @@ def verify_and_add_block():
     proof = block_data['hash']
     try:
         global node
-        node.blockchain.add_block(block, proof)
+        node.add_block(block, proof)
     except:
         return "The block was discarded by the node", 400
 
@@ -172,43 +164,6 @@ def get_pending_tx():
     global node
     return json.dumps(node.blockchain.unconfirmed_transactions)
 
-
-def consensus():
-    """
-    Our naive consnsus algorithm. If a longer valid chain is
-    found, our chain is replaced with it.
-    """
-    longest_chain = None
-    global node
-    current_len = node.blockchain.length
-
-    for peer in node.peers:
-        response = requests.get('{}chain'.format(peer))
-        length = response.json()['length']
-        chain = response.json()['chain']
-        if length > current_len and Blockchain.check_chain_validity(chain):
-            current_len = length
-            longest_chain = chain
-
-    if longest_chain:
-        node.blockchain = longest_chain
-        return True
-
-    return False
-
-
-def announce_new_block(block):
-    """
-    A function to announce to the network once a block has been mined.
-    Other blocks can simply verify the proof of work and add it to their
-    respective chains.
-    """
-    for peer in node.peers:
-        url = "{}add_block".format(peer)
-        headers = {'Content-Type': "application/json"}
-        requests.post(url,
-                      data=json.dumps(block.to_json(), sort_keys=True),
-                      headers=headers)
 
 # Uncomment this line if you want to specify the port number in the code
 #app.run(debug=True, port=8000)
