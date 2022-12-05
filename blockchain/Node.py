@@ -2,7 +2,6 @@ import requests
 import json
 
 from .Blockchain import Blockchain
-from .Block import Block
 
 
 class Node:

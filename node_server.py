@@ -15,13 +15,22 @@ from blockchain import Block, Node
 logging.basicConfig(level=logging.DEBUG)
 
 
-node = None
-
-
 app = Flask(__name__)
-
-
 chain_file_name = os.environ.get('DATA_FILE')
+if chain_file_name is None:
+    data = None
+else:
+    with open(chain_file_name, 'r') as chain_file:
+        raw_data = chain_file.read()
+        if raw_data is None or len(raw_data) == 0:
+            data = None
+        else:
+            data = json.loads(raw_data)
+
+if data is None:
+    node = Node()
+else:
+    node = Node.from_json(data)
 
 
 # endpoint to return the node's copy of the chain.
@@ -46,22 +55,6 @@ def exit_from_signal(signum, stack_frame):
 atexit.register(save_chain)
 signal.signal(signal.SIGTERM, exit_from_signal)
 signal.signal(signal.SIGINT, exit_from_signal)
-
-
-if chain_file_name is None:
-    data = None
-else:
-    with open(chain_file_name, 'r') as chain_file:
-        raw_data = chain_file.read()
-        if raw_data is None or len(raw_data) == 0:
-            data = None
-        else:
-            data = json.loads(raw_data)
-
-if data is None:
-    node = Node()
-else:
-    node = Node.from_json(data)
 
 
 # endpoint to submit a new transaction. This will be used by
