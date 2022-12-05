@@ -19,9 +19,12 @@ class Block:
 
     @classmethod
     def from_json(cls, block_data):
-        return Block(block_data["index"],
+        return cls(block_data["index"],
             block_data["transactions"],
             block_data["timestamp"],
             block_data["previous_hash"],
             block_data["nonce"]
         )
+
+    def to_json(self):
+        return self.__dict__

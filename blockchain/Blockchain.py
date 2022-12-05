@@ -9,21 +9,28 @@ class Blockchain:
 
     def __init__(self, chain=None):
         self.unconfirmed_transactions = []
-        self.chain = chain
-        if self.chain is None:
+        if chain is None:
             self.chain = []
             self.create_genesis_block()
+        else:
+            self.chain = chain
 
     @classmethod
-    def from_json(cls, json_data):
-        generated_blockchain = Blockchain()
-        for idx, block_data in enumerate(json_data):
+    def from_json(cls, blockchain_data):
+        generated_blockchain = cls()
+        for idx, block_data in enumerate(blockchain_data):
             if idx == 0:
                 continue  # skip genesis block
             block = Block.from_json(block_data)
             proof = block_data['hash']
             generated_blockchain.add_block(block, proof)
         return generated_blockchain
+
+    def to_json(self):
+        chain_data = []
+        for block in self.chain:
+            chain_data.append(block.to_json())
+        return chain_data
 
     def create_genesis_block(self):
         """
@@ -38,6 +45,10 @@ class Blockchain:
     @property
     def last_block(self):
         return self.chain[-1]
+
+    @property
+    def length(self):
+        return len(self.chain)
 
     def add_block(self, block, proof):
         """

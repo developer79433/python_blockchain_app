@@ -30,12 +30,7 @@ chain_file_name = os.environ.get('DATA_FILE')
 @app.route('/chain', methods=['GET'])
 def get_chain():
     global node
-    chain_data = []
-    for block in node.blockchain.chain:
-        chain_data.append(block.__dict__)
-    return json.dumps({"length": len(chain_data),
-                       "chain": chain_data,
-                       "peers": list(node.peers)})
+    return json.dumps(node.to_json())
 
 
 def save_chain():
@@ -63,7 +58,10 @@ else:
         else:
             data = json.loads(raw_data)
 
-node = Node(data)
+if data is None:
+    node = Node()
+else:
+    node = Node.from_json(data)
 
 
 # endpoint to submit a new transaction. This will be used by
@@ -142,8 +140,8 @@ def register_with_existing_node():
         global node
         # update chain and the peers
         chain_dump = response.json()['chain']
-        node.blockchain = Blockchain.from_json(chain_dump)
-        node.peers.update(response.json()['peers'])
+        peers = response.json()['peers']
+        node = Node(chain=Blockchain.from_json(chain_dump), peers=peers)
         return "Registration successful", 200
     else:
         # if something goes wrong, pass it on to the API response
@@ -182,13 +180,13 @@ def consensus():
     """
     longest_chain = None
     global node
-    current_len = len(node.blockchain.chain)
+    current_len = node.blockchain.length
 
     for peer in node.peers:
         response = requests.get('{}chain'.format(peer))
         length = response.json()['length']
         chain = response.json()['chain']
-        if length > current_len and peer.blockchain.check_chain_validity(chain):
+        if length > current_len and Blockchain.check_chain_validity(chain):
             current_len = length
             longest_chain = chain
 
@@ -209,7 +207,7 @@ def announce_new_block(block):
         url = "{}add_block".format(peer)
         headers = {'Content-Type': "application/json"}
         requests.post(url,
-                      data=json.dumps(block.__dict__, sort_keys=True),
+                      data=json.dumps(block.to_json(), sort_keys=True),
                       headers=headers)
 
 # Uncomment this line if you want to specify the port number in the code
