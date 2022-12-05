@@ -15,9 +15,9 @@ class Blockchain:
             self.create_genesis_block()
 
     @classmethod
-    def create_chain_from_dump(cls, chain_dump):
+    def from_json(cls, json_data):
         generated_blockchain = Blockchain()
-        for idx, block_data in enumerate(chain_dump):
+        for idx, block_data in enumerate(json_data):
             if idx == 0:
                 continue  # skip genesis block
             block = Block(block_data["index"],

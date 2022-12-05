@@ -142,7 +142,7 @@ def register_with_existing_node():
         global node
         # update chain and the peers
         chain_dump = response.json()['chain']
-        node.blockchain = Blockchain.create_chain_from_dump(chain_dump)
+        node.blockchain = Blockchain.from_json(chain_dump)
         node.peers.update(response.json()['peers'])
         return "Registration successful", 200
     else:

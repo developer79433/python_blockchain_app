@@ -10,6 +10,6 @@ class Node:
             # the address to other participating members of the network
             self.peers = set()
         else:
-            self.blockchain = Blockchain.create_chain_from_dump(json_data['chain'])
+            self.blockchain = Blockchain.from_json(json_data['chain'])
             self.peers = set()
             self.peers.update(json_data['peers'])
